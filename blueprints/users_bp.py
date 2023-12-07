@@ -45,15 +45,25 @@ def login_as_user():
 # Get all useres
 @users.route("/")
 @jwt_required()
-def all_useres():
+def all_users():
     # select * from cards;
     stmt = db.select(
-        User
-    )  # .where(db.or_(Card.status != "Done", Card.id > 2)).order_by(Card.title.desc())
-    useres = db.session.scalars(stmt).all()
-    return UserSchema(many=True, exclude=[]).dump(useres)
+        User)  # .where(db.or_(Card.status != "Done", Card.id > 2)).order_by(Card.title.desc())
+    users = db.session.scalars(stmt).all()
+    return UserSchema(exclude=["password"]).dump(users)
 
-@users.route("/users/<userId>", methods=["DELETE"])
+@users.route("/<userId>", methods=["GET"])
+@jwt_required()
+def get_user(userId):
+    stmt = User.query.filter_by(id=userId)
+    user = db.session.scalar(stmt)
+    if user:
+        return UserSchema().dump(user)
+    else:
+        return {"error": "user not found"}, 404
+    
+
+@users.route("/<userId>", methods=["DELETE"])
 def delete_user(userId):
     authorise_business()
     #Parse incoming POST body through schema

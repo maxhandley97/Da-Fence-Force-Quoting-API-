@@ -20,7 +20,7 @@ class User(db.Model):
 class UserSchema(ma.Schema):
     business = fields.Nested('BusinessSchema', only=['business_name'])
     class Meta:
-        fields = ('id', 'user_name', 'email', 'password', 'is_client', 'is_admin', 'business_id', 'business')
+        fields = ('user_name', 'email', 'business')
 
 user_schema = UserSchema()
 useres_schema = UserSchema(many=True)
