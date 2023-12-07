@@ -1,21 +1,44 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
-from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager
-from os import environ
-from sqlalchemy.exc import IntegrityError
-from marshmallow.exceptions import ValidationError
+import os
 
 
+class Config(object):
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # access to .env and get the value of SECRET_KEY, the variable name can be any but needs to match
+    JWT_SECRET_KEY =  os.environ.get("SECRET_KEY")
+    @property
+    def SQLALCHEMY_DATABASE_URI(self):
+        # access to .env and get the value of DATABASE_URL, the variable name can be any but needs to match
+        value = os.environ.get("DATABASE_URL")
 
-app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = environ.get("JWT_KEY") #used to sign JWT
-app.config["SQLALCHEMY_DATABASE_URI"] = environ.get("DB_URI") #database connection string
-# avoid depreciation warning
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+        if not value:
+            raise ValueError("DATABASE_URL is not set")
 
-db = SQLAlchemy(app) #connects two
-ma = Marshmallow(app) #initialises, connects with flask
-bcrypt = Bcrypt(app)
-jwt = JWTManager(app)
+        return value
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+
+class ProductionConfig(Config):
+    pass
+
+class TestingConfig(Config):
+    TESTING = True
+
+environment = os.environ.get("FLASK_ENV")
+
+if environment == "production":
+    app_config = ProductionConfig()
+elif environment == "testing":
+    app_config = TestingConfig()
+else:
+    app_config = DevelopmentConfig()
+
+
+def unauthorized(err):
+    return {"error": "you are not authorized to access this resource"}
+
+def integrity_error(err):
+    return {"error": str(err)}, 409
+
+def validation_error(err):
+    return {"error": err.messages}
