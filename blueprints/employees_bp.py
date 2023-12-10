@@ -26,6 +26,7 @@ def register_employee():
             employee_name = employee_info["employee_name"],
             email = employee_info["email"],
             password = bcrypt.generate_password_hash(employee_info["password"]).decode("utf8"),
+            #string is truthy, must add extra information for 
             is_manager = bool((employee_info["is_manager"]).lower() == "true"),
             business_id = business_id
 
