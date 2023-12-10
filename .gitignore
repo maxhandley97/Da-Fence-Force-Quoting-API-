@@ -2,3 +2,4 @@
 .env
 .flaskenv
 __pycache__
+tests

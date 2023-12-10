@@ -2,7 +2,7 @@ from main import db
 from flask import Blueprint
 from main import bcrypt
 from models.businesses import Business
-from models.users import User
+from models.employees import Employee
 
 from datetime import date
 
@@ -39,36 +39,33 @@ def seed_db():
     )]
     db.session.add_all(businesses)
     db.session.commit()
-    users = [
-        User(
-            user_name = "admin",
+    employees = [
+        Employee(
+            employee_name = "admin",
             email = "admin@admin.com",
             password = bcrypt.generate_password_hash("admin123456"),
             is_manager = False,
-            is_client = False,
             is_admin = True,
             business_id = businesses[0].id
         ),
 
-        User(
-            user_name = "Max Barbosa",
+        Employee(
+            employee_name = "Max Barbosa",
             email = "maxbarbosa@gmail.com",
             password = bcrypt.generate_password_hash("yipyipyip").decode("utf-8"),
             is_manager = True,
-            is_client = False,
             is_admin = False,
             business_id = businesses[1].id
             ),
-        User(
-            user_name = "Johnny De Fly",
+        Employee(
+            employee_name = "Johnny De Fly",
             email = "jdf@gmail.com",
             password = bcrypt.generate_password_hash("jb123yipyip").decode("utf-8"),
             is_manager = False,
-            is_client = False,
             is_admin = False,
             business_id = businesses[1].id
         )]
-    db.session.add_all(users)
+    db.session.add_all(employees)
     db.session.commit()
 
 

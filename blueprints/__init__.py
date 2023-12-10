@@ -1,6 +1,6 @@
 from blueprints.businesses_bp import business
-from blueprints.users_bp import users
+from blueprints.employees_bp import employees
 registerable_blueprints = [
     business,
-    users
+    employees
 ]

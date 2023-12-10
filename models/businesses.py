@@ -12,12 +12,12 @@ class Business(db.Model):
     abn = db.Column(db.BigInteger(), nullable=False, unique=True)
     is_admin = db.Column(db.Boolean, default=False)
 
-    users = db.relationship("User", back_populates="business")
+    employees = db.relationship("Employee", back_populates="business", cascade="all, delete-orphan")
 
 class BusinessSchema(ma.Schema):
-    users = fields.Nested("UserSchema", only=["user_name"], many=True)
+    employees = fields.Nested("EmployeeSchema", only=["employee_name"], many=True)
     class Meta:
-        fields = ('id', 'business_name', 'email', 'password', 'abn', 'is_admin', 'user_name')
+        fields = ('id', 'business_name', 'email', 'password', 'abn', 'is_admin', 'employee_name')
 
 business_schema = BusinessSchema()
 businesses_schema = BusinessSchema(many=True)
