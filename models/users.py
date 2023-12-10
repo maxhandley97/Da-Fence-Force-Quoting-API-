@@ -10,7 +10,6 @@ class User(db.Model):
     email = db.Column(db.String(), nullable=False, unique=True)
     password = db.Column(db.String(), nullable=False)
     is_manager = db.Column(db.Boolean, default=False)
-    is_client = db.Column(db.Boolean)
     is_admin = db.Column(db.Boolean, default=False)
 
     business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"), nullable=False)
@@ -20,7 +19,8 @@ class User(db.Model):
 class UserSchema(ma.Schema):
     business = fields.Nested('BusinessSchema', only=['business_name'])
     class Meta:
-        fields = ('user_name', 'email', 'business')
+        fields = ('id', 'user_name', 'email', 'business', 'is_manager', 'business_id', 'is_admin', 'password')
+
 
 user_schema = UserSchema()
-useres_schema = UserSchema(many=True)
+users_schema = UserSchema(many=True)

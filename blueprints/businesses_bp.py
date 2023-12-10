@@ -5,7 +5,7 @@ from models.businesses import Business, BusinessSchema
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
-from auth import authorise_business
+# from auth import authorise_business
 
 
 business = Blueprint("business", __name__, url_prefix="/business")
@@ -21,7 +21,7 @@ def register_business():
         business = Business(
             business_name = business_info["business_name"],
             email = business_info["email"],
-            password = bcrypt.generate_password_hash(business_info["password"]),
+            password = bcrypt.generate_password_hash(business_info["password"]).decode("utf8"),
             abn = business_info["abn"]
         )
         db.session.add(business)
@@ -33,8 +33,8 @@ def register_business():
     
 @business.route("/login/", methods=["POST"])
 def login_as_business():
-    business_info = BusinessSchema(only=["email", "password"])
-    stmt = db.select(Business).where(Business.email == business_info["email"]).first()
+    business_info = BusinessSchema(only=["email", "password"]).load(request.json)
+    stmt = db.select(Business).where(Business.email == business_info["email"])
     business = db.session.scalar(stmt)
     if business and bcrypt.check_password_hash(business.password, business_info["password"]):
         token = create_access_token(identity=business.id, expires_delta=timedelta(weeks=2))

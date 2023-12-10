@@ -5,6 +5,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # access to .env and get the value of SECRET_KEY, the variable name can be any but needs to match
     JWT_SECRET_KEY =  os.environ.get("SECRET_KEY")
+    # JWT_TOKEN_LOCATION = ['headers', 'query_string']
     @property
     def SQLALCHEMY_DATABASE_URI(self):
         # access to .env and get the value of DATABASE_URL, the variable name can be any but needs to match
@@ -41,4 +42,4 @@ def integrity_error(err):
     return {"error": str(err)}, 409
 
 def validation_error(err):
-    return {"error": err.messages}
+    return {"error": err.messages}, 400
