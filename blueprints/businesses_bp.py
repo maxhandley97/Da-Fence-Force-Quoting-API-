@@ -38,7 +38,7 @@ def login_as_business():
     business = db.session.scalar(stmt)
     if business and bcrypt.check_password_hash(business.password, business_info["password"]):
         token = create_access_token(identity=business.id, expires_delta=timedelta(weeks=2))
-        return {"status": "successful login", "token": token, "employee": BusinessSchema(exclude=["password"]).dump(business)}
+        return {"status": "successful login", "token": token, "Business": BusinessSchema(exclude=["password"]).dump(business)}
     else:
         return {"error": "Invalid email or password"}, 401
     

@@ -50,7 +50,13 @@ https://www.theserverside.com/definition/object-relational-mapping-ORM
 
 https://medium.com/@shubhkarmanrathore/mastering-crud-operations-with-sqlalchemy-a-comprehensive-guide-a05cf70e5dea
 
+### enitites
 
+Jobs(job_id, estimated_start:date, estimated_completion:date, completion_status:string, total_price:sting, assigned_hours, quote_id, employee_id, job_material_id)
+
+Quotes(quote_id, fence_type:string, fence_height_mm, fence_length_m, images_url:string, status:string, date_posted: date)
+
+Barters(barter_id, post_date:date, quote_id, employee_id, business_id)
 
 
 

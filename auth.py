@@ -21,13 +21,15 @@ def roles_required(*roles):
             user = Employee.query.get(jwt_user_id)
 
             if not ((business and business.id == jwt_user_id) or (user and (user.is_admin or user.is_manager))):
-                abort(401, description="You are not authorized to access this resource.")
+                abort(401, description="You are not authorised to access this resource.")
 
             return fn(*args, **kwargs)
 
         return decorator
 
     return wrapper
+
+
 
 
 
