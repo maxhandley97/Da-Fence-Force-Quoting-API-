@@ -7,14 +7,14 @@ from marshmallow.exceptions import ValidationError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 from setup import validation_error
-from auth import roles_required
+from auth import manager_required
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 
 employees = Blueprint("employees", __name__, url_prefix="/employees")
 
 @employees.route("/register/", methods=["POST"])
 @jwt_required()
-@roles_required('is_admin', 'is_manager', 'business')
+@manager_required('is_admin', 'is_manager', 'business')
 def register_employee():
     
     try:

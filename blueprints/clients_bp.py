@@ -1,13 +1,14 @@
 from flask import Blueprint, request, abort, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from main import db, bcrypt
-from models.clients import Client, ClientSchema
+from models.clients import Client, ClientSchema, client_schema
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
+from auth import authorise_client
 
 
-clients = Blueprint("client", __name__, url_prefix="/client")
+clients = Blueprint("clients", __name__, url_prefix="/clients")
 
 @clients.errorhandler(KeyError)
 def key_error(e):
@@ -21,7 +22,8 @@ def register_client():
             client_name = client_info["client_name"],
             email = client_info["email"],
             password = bcrypt.generate_password_hash(client_info["password"]).decode("utf8"),
-            address = client_info["address"]
+            address = client_info["address"],
+            phone = client_info["phone"]
         )
         db.session.add(client)
         db.session.commit()
@@ -41,6 +43,19 @@ def login_as_client():
     else:
         return {"error": "Invalid email or password"}, 401
     
+# @clients.route("/")
+# @jwt_required()
+# def all_clients():
+#     # select * from cards;
+#     stmt = db.select(Client)
+#     clients = db.session.scalars(stmt).all()
+
+#     # Serialize each client individually
+#     serialized_clients = [client_schema.dump(client) for client in clients]
+
+#     # Return a JSON response with the list of serialized clients
+#     return jsonify(serialized_clients)
+
 # Get all clients
 @clients.route("/")
 @jwt_required()
@@ -50,16 +65,21 @@ def all_clients():
         Client
     )  # .where(db.or_(Card.status != "Done", Card.id > 2)).order_by(Card.title.desc())
     clients = db.session.scalars(stmt).all()
-    return ClientSchema(many=True, exclude=[]).dump(clients)
+    return ClientSchema(many=True, exclude=['password', 'is_admin', 'address', 'phone']).dump(clients)
 
-@clients.route("/employees/<clientId>", methods=["DELETE"])
-def delete_client(clientId):
-    #Parse incoming POST body through schema
-    Client.query.filter_by(id=clientId).delete()
-   
-    db.session.commit()
-
-    return "Success", 201
+@clients.route("/<client_id>", methods=["DELETE"])
+@jwt_required()
+def delete_client(client_id):
+    authorise_client(client_id)
+    # Parse incoming POST body through schema
+    client = Client.query.get(client_id)
+    if client:
+        clientname = client.client_name
+        db.session.delete(client)
+        db.session.commit()
+        return {"Delete": f"Success! Client {clientname} has been deleted."}, 201
+    else:
+        return {"error": "client not found"}, 404
 
 
 

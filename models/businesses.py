@@ -13,6 +13,7 @@ class Business(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
 
     employees = db.relationship("Employee", back_populates="business", cascade="all, delete-orphan")
+    quotes = db.relationship("Quote", back_populates="business", cascade="all, delete-orphan")
 
 class BusinessSchema(ma.Schema):
     employees = fields.Nested("EmployeeSchema", only=["employee_name"], many=True)

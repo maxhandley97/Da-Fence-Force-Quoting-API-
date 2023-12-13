@@ -13,14 +13,14 @@ class Client(db.Model):
     address = db.Column(db.String(), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
-    scopes = db.relationship("Scope", back_populates="clients", cascade="all")
+    quote_requests = db.relationship("QuoteRequest", back_populates="client", cascade="all, delete")
 
 
 class ClientSchema(ma.Schema):
-    scope = fields.Nested('ScopeSchema', only=['scope_id'])
+    quote_requests = fields.Nested('QuoteRequestSchema', many=True, exclude=['client'])
     # is_manager = fields.Boolean()
     class Meta:
-        fields = ('id', 'client_name', 'email', 'phone', 'password', 'scopes', 'is_admin')
+        fields = ('id', 'address', 'client_name', 'email', 'phone', 'password', 'quote_requests', 'is_admin')
 
 
 client_schema = ClientSchema()

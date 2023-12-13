@@ -6,7 +6,7 @@ The traditional approach to quoting is inefficient. Thousands of dollars and hou
 
 The same inefficiency is apparent for potential customers needing to take time off work to meet multiple businesses to ensure they are getting the best product and price before operations have commenced.
 
-To streamline and centralise this in a relatively small industry to start off with, The Fence Force Quoting API is needed. By having a central platform in which potential customers can post details and pictures of the scope of work. Businesses will then be able to look at the scope of work and offer a price and and timeframe to customers. Once accepted, businesses owners will have a central platform for allocation and managing the operations until completion.
+To streamline and centralise this in a relatively small industry to start off with, The Fence Force Quoting API is needed. By having a central platform in which potential customers can post details and pictures of the quote_request of work. Businesses will then be able to look at the quote_request of work and offer a price and and timeframe to customers. Once accepted, businesses owners will have a central platform for allocation and managing the operations until completion.
 
 ### Why have you chosen this database system. What are the drawbacks compared to others?
 

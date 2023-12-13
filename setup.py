@@ -1,5 +1,5 @@
 import os
-
+from flask import jsonify
 
 class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -43,3 +43,8 @@ def integrity_error(err):
 
 def validation_error(err):
     return {"error": err.messages}, 400
+
+def not_found_error(err):
+    response = jsonify({"error": "Not Found", "message": "The requested URL was not found on the server."})
+    response.status_code = 404
+    return response

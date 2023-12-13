@@ -4,9 +4,9 @@ from main import bcrypt
 from models.businesses import Business
 from models.employees import Employee
 from models.clients import Client
-from models.scopes import Scope
+from models.quote_requests import QuoteRequest
 # from models.jobs import Job
-# from models.quotes import Quote
+from models.quotes import Quote
 
 from datetime import date, datetime
 
@@ -14,13 +14,15 @@ db_commands = Blueprint("db", __name__)
 
 # create app's cli command named create, then run it in the terminal as "flask create", 
 # it will invoke create_db function
-@db_commands.cli.command("drop")
-def drop_db():
-    db.drop_all()
-    print("Tables dropped") 
+# @db_commands.cli.command("drop")
+# def drop_db():
+#     db.drop_all()
+#     print("Tables dropped") 
 
 @db_commands.cli.command("create")
 def create_db():
+    db.drop_all()
+    print("Tables dropped") 
     db.create_all()
     print("Tables created")
 
@@ -107,37 +109,53 @@ def seed_db():
     db.session.add_all(clients)
     db.session.commit()
 
-    scopes = [
-        Scope(
+    quote_requests = [
+        QuoteRequest(
         need='Boundary Fence',
         images_url='https://example.com/image1.jpg',
         fence_type = 'Wood',
-        fence_height_mm=2000,
-        approximate_length_m=50,
+        fence_height_mm="2000",
+        approximate_length_m="50",
         client_id = clients[1].id,
         date_created = datetime(2023, 11, 1)
         ),
-        Scope(
+        QuoteRequest(
         need='Pool Fence',
         images_url='https://example.com/image2.jpg',
-        fence_height_mm=1200,
-        approximate_length_m=40,
+        fence_height_mm="1200",
+        approximate_length_m="40",
         client_id=clients[2].id,
         date_created = datetime(2023, 11, 12)
         ),
-        Scope(
+        QuoteRequest(
         need='Pool Fence',
         images_url='https://example.com/image3.jpg',
         fence_type = 'aluminium or glass',
-        fence_height_mm=1600,
-        approximate_length_m=40,
+        fence_height_mm="1600",
+        approximate_length_m="40",
         client_id=clients[1].id,
         date_created = datetime(2023, 11, 14)
         )
         ]
-    db.session.add_all(scopes)
+    db.session.add_all(quote_requests)
+    db.session.commit()
+
+    quotes = [
+        Quote(
+            fence_type="aluminium",
+            price = "$5,0000",
+            status="Pending",
+            date_posted=datetime(2023, 1, 1),
+            quote_request_id = quote_requests[0].id,
+            business_id = businesses[1].id
+        ),
+        # Add more quotes as needed
+    ]
+    db.session.add_all(quotes)
     db.session.commit()
                   
+
+
 
     # quotes_and_jobs = [
     # {
@@ -174,20 +192,7 @@ def seed_db():
 
     # db.session.commit()
 
-    # quotes = [
-    #     Quote(
-    #         fence_material="Pine",
-    #         fence_style="Lapped and capped",
-    #         fence_height_mm=1800,
-    #         fence_length_m=40,
-    #         images_url="https://example.com/images/quote1",
-    #         status="Pending",
-    #         date_posted=datetime(2023, 1, 1)
-    #     ),
-    #     # Add more quotes as needed
-    # ]
-    # db.session.add_all(quotes)
-    # db.session.commit()
+    
 
     # jobs = [
     # Job(
