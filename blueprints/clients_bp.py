@@ -5,7 +5,7 @@ from models.clients import Client, ClientSchema, client_schema
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
-from auth import authorise_client
+from auth import authorised_client
 
 
 clients = Blueprint("clients", __name__, url_prefix="/clients")
@@ -39,22 +39,9 @@ def login_as_client():
     client = db.session.scalar(stmt)
     if client and bcrypt.check_password_hash(client.password, client_info["password"]):
         token = create_access_token(identity=client.id, expires_delta=timedelta(weeks=2))
-        return {"status": "successful login", "token": token, "client": ClientSchema(exclude=["password"]).dump(client)}
+        return {"status": "successful login", "token": token, "client": ClientSchema(exclude=["password", "is_admin", "quote_requests"]).dump(client)}
     else:
         return {"error": "Invalid email or password"}, 401
-    
-# @clients.route("/")
-# @jwt_required()
-# def all_clients():
-#     # select * from cards;
-#     stmt = db.select(Client)
-#     clients = db.session.scalars(stmt).all()
-
-#     # Serialize each client individually
-#     serialized_clients = [client_schema.dump(client) for client in clients]
-
-#     # Return a JSON response with the list of serialized clients
-#     return jsonify(serialized_clients)
 
 # Get all clients
 @clients.route("/")
@@ -70,7 +57,7 @@ def all_clients():
 @clients.route("/<client_id>", methods=["DELETE"])
 @jwt_required()
 def delete_client(client_id):
-    authorise_client(client_id)
+    authorised_client(client_id)
     # Parse incoming POST body through schema
     client = Client.query.get(client_id)
     if client:

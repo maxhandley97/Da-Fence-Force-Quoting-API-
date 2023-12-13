@@ -52,9 +52,9 @@ https://medium.com/@shubhkarmanrathore/mastering-crud-operations-with-sqlalchemy
 
 ### enitites
 
-Jobs(job_id, estimated_start:date, estimated_completion:date, completion_status:string, total_price:sting, assigned_hours, quote_id, employee_id, job_material_id)
+Jobs(job_id, estimated_start:date, estimated_completion:date, completion_status:string, quoted_price:sting, assigned_hours, quote_id, employee_id, job_material_id)
 
-Quotes(quote_id, fence_type:string, fence_height_mm, fence_length_m, images_url:string, status:string, date_posted: date)
+Quotes(quote_id, fence_type:string, fence_height_mm, fence_length_m, images_url:string, status:string, date_created: date)
 
 Barters(barter_id, post_date:date, quote_id, employee_id, business_id)
 

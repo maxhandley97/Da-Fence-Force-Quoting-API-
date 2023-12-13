@@ -11,6 +11,7 @@ class Client(db.Model):
     password = db.Column(db.String(), nullable=False)
     phone = db.Column(db.String(), nullable=False, unique=True)
     address = db.Column(db.String(), nullable=False)
+    roles = db.Column(db.String())
     is_admin = db.Column(db.Boolean, default=False)
 
     quote_requests = db.relationship("QuoteRequest", back_populates="client", cascade="all, delete")
@@ -18,9 +19,9 @@ class Client(db.Model):
 
 class ClientSchema(ma.Schema):
     quote_requests = fields.Nested('QuoteRequestSchema', many=True, exclude=['client'])
-    # is_manager = fields.Boolean()
+    # manager = fields.Boolean()
     class Meta:
-        fields = ('id', 'address', 'client_name', 'email', 'phone', 'password', 'quote_requests', 'is_admin')
+        fields = ('id', 'address', 'client_name', 'email', 'phone', 'password', 'quote_requests', 'is_admin', 'roles')
 
 
 client_schema = ClientSchema()

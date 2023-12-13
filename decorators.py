@@ -18,7 +18,7 @@ def client_or_business_required(*roles):
 
             if not (
                 (business and business.id == jwt_user_id) or
-                (employee and (employee.is_admin or employee.is_manager)) or
+                (employee and (employee.is_admin or employee.manager)) or
                 (client and client.id == jwt_user_id)
             ):
                 abort(401, description="You are not authorized to access this resource.")

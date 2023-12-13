@@ -1,6 +1,8 @@
 from main import db, ma
 from marshmallow import fields
+from marshmallow.validate import OneOf
 
+VALID_STATUSES = ('To Do', 'Done', 'In Progress', 'Cancelled')
 class Job(db.Model):
     # define the table name for the db
     __tablename__= "jobs"
@@ -9,21 +11,24 @@ class Job(db.Model):
     estimated_start = db.Column(db.Date)
     estimated_completion = db.Column(db.Date)
     completion_status = db.Column(db.String())
-    total_price = db.Column(db.Float)
+    quoted_price = db.Column(db.Float)
     assigned_hours = db.Column(db.Integer)
+    final_cost = db.Column(db.Float)
 
-    quote_id = db.Column(db.Integer, db.ForeignKey('quote_id'), unique=True, nullable=True)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quotes.quote_id'), unique=True, nullable=True)
     quote = db.relationship('Quote', back_populates='job', uselist=False)
 
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee_id'))
-    employee = db.relationship('Employee', back_populates='employees', cascade='all')
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
+    employee = db.relationship('Employee', back_populates='jobs', cascade='all')
 
 
 class JobSchema(ma.Schema):
     employee = fields.Nested('EmployeeSchema', only=['employee_name'])
+    status = fields.String(validate=OneOf(VALID_STATUSES), error='status must be To Do, Done, In Progress, Cancelled')
+
     class Meta:
-        fields = ('job_id', 'estimated_start', 'estimated_completion', 'completion_status',
-                  'total_price', 'assigned_hours', 'quote_id', 'employee_id', 'employee')
+        fields = ('id', 'estimated_start', 'estimated_completion', 'completion_status',
+                  'quoted_price', 'assigned_hours', 'quote_id', 'employee_id', 'employee')
 
 
 job_schema = JobSchema()

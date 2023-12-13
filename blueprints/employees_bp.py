@@ -7,14 +7,14 @@ from marshmallow.exceptions import ValidationError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 from setup import validation_error
-from auth import manager_required
+from auth import roles_required
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 
 employees = Blueprint("employees", __name__, url_prefix="/employees")
 
 @employees.route("/register/", methods=["POST"])
 @jwt_required()
-@manager_required('is_admin', 'is_manager', 'business')
+@roles_required('manager', 'business')
 def register_employee():
     
     try:
@@ -26,10 +26,8 @@ def register_employee():
             employee_name = employee_info["employee_name"],
             email = employee_info["email"],
             password = bcrypt.generate_password_hash(employee_info["password"]).decode("utf8"),
-            #string is truthy, must add extra information for 
-            is_manager = bool((employee_info["is_manager"]).lower() == "true"),
+            roles = employee_info["roles"],
             business_id = business_id
-
         )
         db.session.add(employee)
         db.session.commit()

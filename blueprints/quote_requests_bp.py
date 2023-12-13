@@ -2,10 +2,12 @@ from flask import Blueprint, request, abort, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from main import db
 from models.quote_requests import QuoteRequestSchema, QuoteRequest, quote_requests_schema
+from models.jobs import Job
+from models.quotes import Quote
 from blueprints.quotes_bp import quotes
 from decorators import client_or_business_required
 from datetime import date
-from auth import authorise_client
+from auth import authorised_client
 
 quote_requests = Blueprint('quote_requests', __name__, url_prefix='/quote_requests')
 
@@ -13,7 +15,7 @@ quote_requests.register_blueprint(quotes)
 
 @quote_requests.route("/")
 @jwt_required()
-@client_or_business_required('business_owner', 'employee_manager', 'admin', 'client')
+@client_or_business_required('business', 'employee_manager', 'admin', 'client')
 def all_quote_requests():
     # select * from quote_requests;
     stmt = db.select(
@@ -21,11 +23,21 @@ def all_quote_requests():
     )  # .where(db.or_(QuoteRequest.status != 'Done', QuoteRequest.id > 2)).order_by(QuoteRequest.title.desc())
     quote_requests = db.session.scalars(stmt).all()
     return QuoteRequestSchema(many=True).dump(quote_requests)
-    
+
+@quote_requests.route("client/<int:client_id>")
+@jwt_required()
+@client_or_business_required('business', 'employee_manager', 'admin', 'client')
+def quote_requests_by_client(client_id=None):
+    # Fetch quote requests for the specified client
+    stmt = db.select(QuoteRequest).where(QuoteRequest.client_id == client_id)
+    quote_requests = db.session.scalars(stmt).all()
+
+    return QuoteRequestSchema(many=True).dump(quote_requests)
+
 # Get one quote_request
 @quote_requests.route('/<int:id>')
 @jwt_required()
-@client_or_business_required('business_owner', 'employee_manager', 'admin', 'client')
+@client_or_business_required('business', 'employee_manager', 'admin', 'client')
 def one_quote_request(id):
     stmt = db.select(QuoteRequest).filter_by(id=id) # .where(QuoteRequest.id == id)
     quote_request = db.session.scalar(stmt)
@@ -33,6 +45,8 @@ def one_quote_request(id):
         return QuoteRequestSchema().dump(quote_request)
     else:
         return {'error': 'QuoteRequest not found'}, 404
+    
+
 
 # Create a new quote_request
 @quote_requests.route('/', methods=['POST'])
@@ -46,7 +60,7 @@ def create_quote_request():
         client_id=jwt_client_id,
         date_created=quote_request_info.get('date_created', date.today())
     ).first()
-    
+
     #ensure no duplicate
     if existing_request:
         return jsonify({"error": "You've already created this quote request"}), 409
@@ -95,8 +109,57 @@ def delete_quote_request(id):
         return {'error': 'QuoteRequest not found'}, 404
     
 
+@quote_requests.route('/<int:quote_request_id>/<int:quote_id>/accept', methods=['PUT'])
+@jwt_required()
+def accept_quote(quote_request_id, quote_id):
+    try:
+        # Get the quote request
+        quote_request = QuoteRequest.query.get(quote_request_id)
 
-# Get one quote_request
+        if not quote_request:
+            # Handle case when the quote request does not exist
+            return jsonify({"message": "Quote request not found"}), 404
+
+        # Get the quote
+        quote = Quote.query.get(quote_id)
+
+        if not quote:
+            # Handle case when the quote does not exist
+            return jsonify({"message": "Quote not found"}), 404
+
+        # Check if the quote belongs to the specified quote request
+        if quote.quote_request_id != quote_request.id:
+            return jsonify({"message": "Quote does not belong to the specified quote request"}), 400
+        
+        # Ensuring only the creator can accept the quote
+        authorised_client(quote_request.client_id)
+
+        # Change quote status to accepted
+        quote.status = "accepted"
+
+        # Create a job
+        job = Job(
+            estimated_start=quote.estimated_commencement,
+            estimated_completion=None,
+            completion_status="To Do",  # Set accordingly
+            quoted_price=float(quote.price),  # Convert price to float, adjust as needed
+            assigned_hours=None,  # Set accordingly
+            quote_id=quote.quote_id,
+            final_cost=None,
+        )
+
+        # Save changes to the database
+        db.session.add(quote)
+        db.session.add(job)
+        db.session.commit()
+
+        # Return success message
+        return jsonify({"message": "Quote accepted"}), 200
+
+    except Exception as e:
+        # Handle exceptions appropriately
+        return jsonify({"error": str(e)}), 500
+# #create job from quote_request
 # @quote_requests.route('/<int:id>/accept_quote')
 # @jwt_required()
 # def accept_quote(quote_request_id, quote_id):
@@ -104,5 +167,3 @@ def delete_quote_request(id):
 #     # get the quote
 #     # change quote status to accepted
 #     # create job
-
-    
