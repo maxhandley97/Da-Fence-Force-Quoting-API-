@@ -25,8 +25,8 @@ def seed_db():
         Business(
         business_name = "Admin",
         email = "admin@business.com",
-        password = bcrypt.generate_password_hash("admin123").decode("utf-8"),
-        roles = "business",
+        password = bcrypt.generate_password_hash("admin123456").decode("utf-8"),
+        roles = "admin",
         abn = 5213125125,
         is_admin = True
     ),
@@ -53,7 +53,7 @@ def seed_db():
         Employee(
             employee_name = "admin",
             email = "admin@employee.com",
-            password = bcrypt.generate_password_hash("admin123456"),
+            password = bcrypt.generate_password_hash("admin123456").decode("utf-8"),
             roles = "manager",
             is_admin = True,
             business_id = businesses[0].id
@@ -62,7 +62,7 @@ def seed_db():
         Employee(
             employee_name = "Max Barbosa",
             email = "maxbarbosa@gmail.com",
-            password = bcrypt.generate_password_hash("yipyipyip").decode("utf-8"),
+            password = bcrypt.generate_password_hash("yipyipyip1").decode("utf-8"),
             roles = "manager",
             is_admin = False,
             business_id = businesses[1].id
@@ -83,9 +83,9 @@ def seed_db():
             client_name = "admin",
             email = "admin@client.com",
             address = "22 Main Street, Mullumbimby, 2043",
-            password = bcrypt.generate_password_hash("admin123456"),
+            password = bcrypt.generate_password_hash("admin123456").decode("utf-8"),
             phone = "0422044123",
-            roles = "client",
+            roles = "admin",
             is_admin = True,
         ),
 
@@ -93,7 +93,7 @@ def seed_db():
             client_name = "Jill Astron",
             email = "JA123@gmail.com",
             address = "22 Joe Street, Ocean Shores, 2043",
-            password = bcrypt.generate_password_hash("jillyjill").decode("utf-8"),
+            password = bcrypt.generate_password_hash("jillyjill1").decode("utf-8"),
             roles = "client",
             phone = "0422044333",
             ),
@@ -183,7 +183,7 @@ def seed_db():
             completion_status="In Progress",
             quoted_price=5000.00,
             assigned_hours=20,
-            employee_id=employees[2].id,
+            employee_id=employees[2].employee_id,
             quote=None  # Initialize with None, it will be updated in the loop
         )
     }

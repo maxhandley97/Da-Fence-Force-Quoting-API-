@@ -1,5 +1,9 @@
 import os
-from flask import jsonify
+from flask import jsonify, abort
+from sqlalchemy.exc import IntegrityError
+from marshmallow.exceptions import ValidationError
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
+from werkzeug.exceptions import BadRequest
 
 class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -36,15 +40,50 @@ else:
 
 
 def unauthorized(err):
-    return {"error": "you are not authorized to access this resource"}
+    return {"Authorisation error": "you are not authorised to access this resource"}, 401
 
 def integrity_error(err):
-    return {"error": str(err)}, 409
+    return {"Integrity error": "Duplicate record, already exists", "err":str(err)}, 409
 
 def validation_error(err):
     return {"error": err.messages}, 400
+def type_error(err):
+    return {"error": "incorrect data type"}
+
+def default_error(e):
+    return jsonify({'error': e.description}), 400
 
 def not_found_error(err):
     response = jsonify({"error": "Not Found", "message": "The requested URL was not found on the server."})
     response.status_code = 404
     return response
+
+def key_error(e):
+    return jsonify({'error': f'The field {e} is required'}), 400
+
+def expired_signature_error(err):
+        return {"error": "JWT token has expired"}, 422
+
+
+
+def authorised_router_error_handler(f):
+    def inner(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except ValidationError as e:
+            return validation_error(e)
+        except KeyError as e:
+            return key_error(e)
+        except ExpiredSignatureError:
+            return {"error": "Your JWT token has expired"}, 401
+        except InvalidTokenError:
+            return {"error": "Invalid or missing JWT token in the Authorization header"}, 422
+        except IntegrityError:
+            return {"error": "Employee already signed up"}, 409
+        except BadRequest as e:
+            return default_error(e)
+        # except Exception as e:
+        #     abort(400)
+    # need to
+    inner.__name__ = f.__name__        
+    return inner

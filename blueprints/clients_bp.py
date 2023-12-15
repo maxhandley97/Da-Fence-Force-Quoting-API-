@@ -10,14 +10,10 @@ from auth import authorised_client
 
 clients = Blueprint("clients", __name__, url_prefix="/clients")
 
-@clients.errorhandler(KeyError)
-def key_error(e):
-    return jsonify({'error': f'The field {e} is required'}), 400
-
 @clients.route("/register", methods=["POST"])
 def register_client():
     try:
-        client_info = ClientSchema(exclude=["id", "is_admin"]).load(request.json)
+        client_info = ClientSchema(exclude=["id", "is_admin", ""]).load(request.json)
         client = Client(
             client_name = client_info["client_name"],
             email = client_info["email"],

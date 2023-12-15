@@ -10,7 +10,7 @@ class Business(db.Model):
     email = db.Column(db.String(), nullable=False, unique=True)
     password = db.Column(db.String(), nullable=False)
     abn = db.Column(db.BigInteger(), nullable=False, unique=True)
-    roles = db.Column(db.String(), nullable=False)
+    roles = db.Column(db.String(), nullable=False, default="business")
     is_admin = db.Column(db.Boolean, default=False)
 
     employees = db.relationship("Employee", back_populates="business", cascade="all, delete-orphan")

@@ -18,7 +18,7 @@ class Job(db.Model):
     quote_id = db.Column(db.Integer, db.ForeignKey('quotes.quote_id'), unique=True, nullable=True)
     quote = db.relationship('Quote', back_populates='job', uselist=False)
 
-    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'))
     employee = db.relationship('Employee', back_populates='jobs', cascade='all')
 
 

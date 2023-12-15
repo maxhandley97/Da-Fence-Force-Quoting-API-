@@ -84,9 +84,10 @@ def create_quote_request():
 @jwt_required()
 def update_quote_request(id):
     quote_request_info = QuoteRequestSchema(exclude=['id', 'date_created']).load(request.json)
-    stmt = db.select(QuoteRequest).filter_by(id=id) # .where(QuoteRequest.id == id)
+    stmt = db.select(QuoteRequest).filter_by(id=id) 
     quote_request = db.session.scalar(stmt)
     if quote_request:
+        authorised_client(quote_request.client_id)
         quote_request.title = quote_request_info.get('title', quote_request.title)
         quote_request.description = quote_request_info.get('description', quote_request.description)
         quote_request.status = quote_request_info.get('status', quote_request.status)

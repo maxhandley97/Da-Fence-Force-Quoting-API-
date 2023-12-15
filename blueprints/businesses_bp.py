@@ -5,7 +5,7 @@ from models.businesses import Business, BusinessSchema
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
-from auth import authorised_business
+# from auth import is_authorised_business_or_manager
 
 business = Blueprint("business", __name__, url_prefix="/business")
 
@@ -16,7 +16,7 @@ def key_error(e):
 @business.route("/register", methods=["POST"])
 def register_business():
     try:
-        business_info = BusinessSchema(exclude=["id", "is_admin"]).load(request.json)
+        business_info = BusinessSchema(exclude=["id", "is_admin", "roles"]).load(request.json)
         business = Business(
             business_name = business_info["business_name"],
             email = business_info["email"],
@@ -36,7 +36,8 @@ def login_as_business():
     stmt = db.select(Business).where(Business.email == business_info["email"])
     business = db.session.scalar(stmt)
     if business and bcrypt.check_password_hash(business.password, business_info["password"]):
-        token = create_access_token(identity=business.id, expires_delta=timedelta(weeks=2))
+        additional_claims = {"roles": "business"}
+        token = create_access_token(identity=business.id, expires_delta=timedelta(weeks=2), additional_claims=additional_claims)
         return {"status": "successful login", "token": token, "Business": BusinessSchema(exclude=["password"]).dump(business)}
     else:
         return {"error": "Invalid email or password"}, 401
@@ -64,8 +65,6 @@ def delete_business(business_id):
         return {"Delete": f"Success! Business {businessname} has been deleted."}, 201
     else:
         return {"error": "business not found"}, 404
-
-    return "Success", 201
 
 
 

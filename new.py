@@ -1,8 +1,9 @@
-card_fields = card_schema.load(request.json)
-    employee_id = get_jwt_identity()
-    #find it in the database
+def authorised_manager(employee_id=None):
+    from blueprints.employees_bp import Employee
+    jwt_employee_id = get_jwt_identity()
+    
     stmt = db.select(Employee).filter_by(id=employee_id)
     employee = db.session.scalar(stmt)
-    if not employee:
-        return abort(401, description="Invalid Employee")
-    if not employee.admin:
+    
+    if not (employee.is_admin or (employee_id and jwt_employee_id == employee_id)):
+        abort(401, description="You are not an authorised employee.")

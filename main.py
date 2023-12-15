@@ -5,7 +5,8 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from sqlalchemy.exc import IntegrityError
 from marshmallow.exceptions import ValidationError
-from setup import integrity_error, validation_error, unauthorized, not_found_error
+from werkzeug.exceptions import BadRequest
+from setup import integrity_error, not_found_error, key_error, validation_error, default_error, unauthorized
 
 
 
@@ -43,17 +44,19 @@ def create_app():
     for controller in registerable_blueprints:
         app.register_blueprint(controller)
 
-    @app.errorhandler(Exception)
-    def handle_error(error):
-        status_code = getattr(error, 'code', 500)  # Get the status code if available
-        response = jsonify({"error": "Internal Server Error", "message": str(error)})
-        response.status_code = status_code
-        return response
+    # @app.errorhandler(Exception)
+    # def handle_error(error):
+    #     status_code = getattr(error, 'code', 500)  # Get the status code if available
+    #     response = jsonify({"error": "Internal Server Error", "message": str(error)})
+    #     response.status_code = status_code
+    #     return response
     
     app.errorhandler(401)(unauthorized)
     app.errorhandler(IntegrityError)(integrity_error)
     app.errorhandler(ValidationError)(validation_error)
     app.register_error_handler(404, not_found_error)
+    app.errorhandler(KeyError)(key_error)
+    app.errorhandler(BadRequest)(default_error)
 
     
     return app
