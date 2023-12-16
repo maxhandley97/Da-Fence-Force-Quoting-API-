@@ -4,7 +4,7 @@ from datetime import date
 
 class Quote(db.Model):
     __tablename__ = 'quotes'
-    quote_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     fence_type = db.Column(db.String())
     price = db.Column(db.Float)
     status = db.Column(db.String())
@@ -12,10 +12,10 @@ class Quote(db.Model):
     estimated_commencement = db.Column(db.Date, nullable=False)
     estimated_days_job_duration = db.Column(db.Integer, nullable=False)
     quote_request_id = db.Column(db.Integer, db.ForeignKey('quote_requests.id'), nullable=False)
-    quote_request = db.relationship("QuoteRequest", back_populates = "quotes", cascade = "all")
+    quote_request = db.relationship("QuoteRequest", back_populates = "quotes")
 
     business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"), nullable=False)
-    business = db.relationship("Business", back_populates="quotes", cascade="all, delete")
+    business = db.relationship("Business", back_populates="quotes")
 
     job = db.relationship('Job', uselist=False, back_populates='quote')
 

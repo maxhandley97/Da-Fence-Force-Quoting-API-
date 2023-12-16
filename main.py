@@ -5,8 +5,10 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from sqlalchemy.exc import IntegrityError
 from marshmallow.exceptions import ValidationError
+from jwt.exceptions import InvalidTokenError
 from werkzeug.exceptions import BadRequest
-from setup import integrity_error, not_found_error, key_error, validation_error, default_error, unauthorized
+from setup import (integrity_error, not_found_error, key_error, 
+                   validation_error, default_error, unauthorized, invalid_token_error)
 
 
 
@@ -57,6 +59,7 @@ def create_app():
     app.register_error_handler(404, not_found_error)
     app.errorhandler(KeyError)(key_error)
     app.errorhandler(BadRequest)(default_error)
+    app.errorhandler(InvalidTokenError)(invalid_token_error)
 
     
     return app

@@ -5,7 +5,7 @@ from models.businesses import Business, BusinessSchema
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
-# from auth import is_authorised_business_or_manager
+from auth import authorised_business_or_manager, authorised_business
 
 business = Blueprint("business", __name__, url_prefix="/business")
 
@@ -37,8 +37,11 @@ def login_as_business():
     business = db.session.scalar(stmt)
     if business and bcrypt.check_password_hash(business.password, business_info["password"]):
         additional_claims = {"roles": "business"}
-        token = create_access_token(identity=business.id, expires_delta=timedelta(weeks=2), additional_claims=additional_claims)
-        return {"status": "successful login", "token": token, "Business": BusinessSchema(exclude=["password"]).dump(business)}
+        token = create_access_token(
+            identity=business.id, 
+            expires_delta=timedelta(weeks=2), 
+            additional_claims=additional_claims)
+        return {"status": "successful login", "token": token, "Business": BusinessSchema(exclude=["password", "is_admin", "roles"]).dump(business)}
     else:
         return {"error": "Invalid email or password"}, 401
     

@@ -15,11 +15,11 @@ class Job(db.Model):
     assigned_hours = db.Column(db.Integer)
     final_cost = db.Column(db.Float)
 
-    quote_id = db.Column(db.Integer, db.ForeignKey('quotes.quote_id'), unique=True, nullable=True)
-    quote = db.relationship('Quote', back_populates='job', uselist=False)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quotes.id'), unique=True, nullable=True)
+    quote = db.relationship('Quote', back_populates='job', uselist=False, cascade="all, delete")
 
-    employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'))
-    employee = db.relationship('Employee', back_populates='jobs', cascade='all')
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
+    employee = db.relationship('Employee', back_populates='jobs')
 
 
 class JobSchema(ma.Schema):

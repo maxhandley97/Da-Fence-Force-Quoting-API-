@@ -183,7 +183,7 @@ def seed_db():
             completion_status="In Progress",
             quoted_price=5000.00,
             assigned_hours=20,
-            employee_id=employees[2].employee_id,
+            employee_id=employees[2].id,
             quote=None  # Initialize with None, it will be updated in the loop
         )
     }
@@ -196,7 +196,7 @@ def seed_db():
 
     # Now update the quote_id in the Job instances
     for pair in quotes_and_jobs:
-        pair['job'].quote_id = pair['job'].quote.quote_id
+        pair['job'].id = pair['job'].quote.id
 
     db.session.commit()
 

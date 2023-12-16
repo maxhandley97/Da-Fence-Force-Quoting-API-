@@ -40,7 +40,7 @@ else:
 
 
 def unauthorized(err):
-    return {"Authorisation error": "you are not authorised to access this resource"}, 401
+    return {"Authorisation error": "Not authorised to access this resource"}, 401
 
 def integrity_error(err):
     return {"Integrity error": "Duplicate record, already exists", "err":str(err)}, 409
@@ -62,7 +62,13 @@ def key_error(e):
     return jsonify({'error': f'The field {e} is required'}), 400
 
 def expired_signature_error(err):
-        return {"error": "JWT token has expired"}, 422
+    return {"error": "JWT token has expired"}, 422
+
+def invalid_token_error(err):
+    return {"error": "Invalid token", "message": str(err)}, 422
+
+
+
 
 
 
@@ -79,11 +85,11 @@ def authorised_router_error_handler(f):
         except InvalidTokenError:
             return {"error": "Invalid or missing JWT token in the Authorization header"}, 422
         except IntegrityError:
-            return {"error": "Employee already signed up"}, 409
+            return {"error": "User already signed up"}, 409
         except BadRequest as e:
             return default_error(e)
-        # except Exception as e:
-        #     abort(400)
-    # need to
+        except Exception as e:
+            abort(400)
+    # needed to not take the route name instead of handler
     inner.__name__ = f.__name__        
     return inner

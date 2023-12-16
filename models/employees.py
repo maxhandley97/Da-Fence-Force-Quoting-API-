@@ -6,7 +6,7 @@ class Employee(db.Model):
     # define the table name for the db
     __tablename__= "employees"
     # Set the primary key, we need to define that each attribute is also a column in the db table, remember "db" is the object we created in the previous step.
-    employee_id = db.Column(db.Integer,primary_key=True)  
+    id = db.Column(db.Integer,primary_key=True)  
     employee_name = db.Column(db.String(), nullable=False)
     email = db.Column(db.String(), nullable=False, unique=True)
     password = db.Column(db.String(), nullable=False)
@@ -14,9 +14,9 @@ class Employee(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
 
     business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"), nullable=False)
-    business = db.relationship("Business", back_populates="employees", cascade="all")
+    business = db.relationship("Business", back_populates="employees")
 
-    jobs = db.relationship("Job", back_populates="employee", cascade="all")
+    jobs = db.relationship("Job", back_populates="employee")
 
 
 class EmployeeSchema(ma.Schema):

@@ -1,22 +1,32 @@
 from flask import Blueprint, request, abort, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity, current_user, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, verify_jwt_in_request
 from main import db, bcrypt
 from models.employees import Employee, EmployeeSchema, employees_schema, employee_schema
+from models.businesses import Business
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 from setup import authorised_router_error_handler
 from auth import authorised_business_or_manager
+from jwt.exceptions import InvalidTokenError
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 employees = Blueprint("employees", __name__, url_prefix="/employees")
 
 
-
+#Must be logged in as a business or a manager to register employees
 @employees.route("/register/", methods=["POST"])
 @jwt_required()
 @authorised_router_error_handler
 def register_employee():
         employee_info = EmployeeSchema(exclude=["id", "is_admin"]).load(request.json)
         # Get the ID from JWT token
+        try: 
+            verify_jwt_in_request()
+        except InvalidTokenError:
+            abort(422)
+            
         jwt_identity = get_jwt_identity()
         # looks at additional claims
         claims=get_jwt()
@@ -25,14 +35,17 @@ def register_employee():
         if "manager" in authorised_claim:
              #Access the "business_id" from the "employee" dictionary
             employee_info = claims.get("employee", {})
+            #need to instatiate the jwt to .get
             if isinstance(employee_info, dict):
+                #get business_id for automation of employee information
                 business_id = employee_info.get("business_id")
             else:
                 abort(401)
 
         elif "business" in authorised_claim:
-            #need to instatiate the jwt
+            #need to instatiate the jwt to .get
             if isinstance(jwt_identity, int):
+                #get business_id for automation of employee information
                 business_id = jwt_identity
         else:
             abort(401)
@@ -96,32 +109,41 @@ def get_employee(employeeId):
         return {"error": "employee not found"}, 404
     
 
-# @employees.route("/<int:id>", methods=["DELETE"])
-# @jwt_required()
-# def delete_employee(id):
-#     authorised_business_or_manager()
-#     stmt = db.select(Employee).filter_by(id=id) # .where(Card.id == id)
-#     employee = db.session.scalar(stmt)
-#     if employee:
-#         employee_name = employee.employee_name
-#         db.session.delete(employee)
-#         db.session.commit()
-#         return {"Delete": f"Success! Employee {employee_name} has been deleted."}, 201
-#     else:
-#         return {"error": "employee not found"}, 404
-    
 @employees.route("/<int:employee_id>", methods=["DELETE"])
 @jwt_required()
 def delete_employee(employee_id):
-    stmt = db.select(Employee).filter_by(employee_id=employee_id)
+    jwt_identity = get_jwt_identity()
+    # looks at additional claims
+    claims=get_jwt()
+    #get the role from claims to accept both business and manager roles
+    authorised_claim = claims.get("roles", [])
+    if "manager" in authorised_claim:
+        stmt = db.select(Employee).filter_by(id=jwt_identity)
+        manager = db.session.scalar(stmt)
+        business_id = manager.business_id
+    elif "business" in authorised_claim:
+        stmt = db.select(Business).filter_by(id=jwt_identity)
+        business = db.session.scalar(stmt)
+        business_id = business.id
+    else:
+        abort(401, description="Not authorised to access")
+    logger.debug(f"auth: {authorised_claim}")
+
+    stmt = db.select(Employee).filter_by(id=employee_id) # .where(Card.id == id)
     employee = db.session.scalar(stmt)
-    if employee:
+    #must be from the business 
+    if employee and employee.business_id == business_id:
+        logger.debug(f"Employee business_id: {employee.business_id}")
+        logger.debug(f"Business_id: {business_id}")
+        employee_name = employee.employee_name
         db.session.delete(employee)
         db.session.commit()
-        return {"Delete": f"Success! Employee has been deleted."}, 201
+        return {"Delete": f"Success! Employee {employee_name} has been deleted."}, 201
     else:
-        print("Employee not found")
-        return {"error": "Employee not found"}, 404
-
+        logger.debug(f"Employee business_id: {employee.business_id}")
+        logger.debug(f"Business_id: {business_id}")
+                     
+        return {"error": "employee not found"}, 404
+   
 
 

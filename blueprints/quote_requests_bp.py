@@ -1,5 +1,5 @@
 from flask import Blueprint, request, abort, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request, get_jwt
 from main import db
 from models.quote_requests import QuoteRequestSchema, QuoteRequest, quote_requests_schema
 from models.jobs import Job
@@ -7,7 +7,7 @@ from models.quotes import Quote
 from blueprints.quotes_bp import quotes
 from decorators import client_or_business_required
 from datetime import date
-from auth import authorised_client
+from auth import authorised_client, manager_business_client_access
 
 quote_requests = Blueprint('quote_requests', __name__, url_prefix='/quote_requests')
 
@@ -15,7 +15,7 @@ quote_requests.register_blueprint(quotes)
 
 @quote_requests.route("/")
 @jwt_required()
-@client_or_business_required('business', 'employee_manager', 'admin', 'client')
+@manager_business_client_access()
 def all_quote_requests():
     # select * from quote_requests;
     stmt = db.select(
@@ -26,7 +26,7 @@ def all_quote_requests():
 
 @quote_requests.route("client/<int:client_id>")
 @jwt_required()
-@client_or_business_required('business', 'employee_manager', 'admin', 'client')
+@manager_business_client_access()
 def quote_requests_by_client(client_id=None):
     # Fetch quote requests for the specified client
     stmt = db.select(QuoteRequest).where(QuoteRequest.client_id == client_id)
@@ -37,7 +37,7 @@ def quote_requests_by_client(client_id=None):
 # Get one quote_request
 @quote_requests.route('/<int:id>')
 @jwt_required()
-@client_or_business_required('business', 'employee_manager', 'admin', 'client')
+@manager_business_client_access()
 def one_quote_request(id):
     stmt = db.select(QuoteRequest).filter_by(id=id) # .where(QuoteRequest.id == id)
     quote_request = db.session.scalar(stmt)
@@ -52,7 +52,14 @@ def one_quote_request(id):
 @quote_requests.route('/', methods=['POST'])
 @jwt_required()
 def create_quote_request():
+    #must verify if client
+    verify_jwt_in_request()
     jwt_client_id = get_jwt_identity()
+    claims = get_jwt()
+    if claims.get("roles") == "client":
+        pass
+    else:
+        abort(401)
     quote_request_info = QuoteRequestSchema(exclude=['id', 'date_created']).load(request.json)
     # Check if request exists
     existing_request = QuoteRequest.query.filter_by(
@@ -88,9 +95,12 @@ def update_quote_request(id):
     quote_request = db.session.scalar(stmt)
     if quote_request:
         authorised_client(quote_request.client_id)
-        quote_request.title = quote_request_info.get('title', quote_request.title)
+        quote_request.need = quote_request_info.get('need', quote_request.need)
         quote_request.description = quote_request_info.get('description', quote_request.description)
-        quote_request.status = quote_request_info.get('status', quote_request.status)
+        quote_request.images_url = quote_request_info.get('images_url', quote_request.images_url)
+        quote_request.fence_type = quote_request_info.get('fence_type', quote_request.fence_type)
+        quote_request.fence_height_mm = quote_request_info.get('fence_height_mm', quote_request.fence_height_mm)
+        quote_request.approximated_length_m = quote_request.get('approximated_length_m', quote_request.approximated_length_m)
         db.session.commit()
         return QuoteRequestSchema().dump(quote_request)
     else:

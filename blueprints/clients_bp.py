@@ -34,7 +34,8 @@ def login_as_client():
     stmt = db.select(Client).where(Client.email == client_info["email"])
     client = db.session.scalar(stmt)
     if client and bcrypt.check_password_hash(client.password, client_info["password"]):
-        token = create_access_token(identity=client.id, expires_delta=timedelta(weeks=2))
+        additional_claims = {"roles": "client"}
+        token = create_access_token(identity=client.id, expires_delta=timedelta(weeks=2), additional_claims = additional_claims)
         return {"status": "successful login", "token": token, "client": ClientSchema(exclude=["password", "is_admin", "quote_requests"]).dump(client)}
     else:
         return {"error": "Invalid email or password"}, 401
@@ -43,7 +44,7 @@ def login_as_client():
 @clients.route("/")
 @jwt_required()
 def all_clients():
-    # select * from cards;
+    authorised_client()
     stmt = db.select(
         Client
     )  # .where(db.or_(Card.status != "Done", Card.id > 2)).order_by(Card.title.desc())
