@@ -22,7 +22,7 @@ def all_quotes(quote_request_id):
     # select * from quote_requests;
     stmt = db.select(
         Quote
-    )  # .where(db.or_(QuoteRequest.status != 'Done', QuoteRequest.id > 2)).order_by(QuoteRequest.title.desc())
+    ).where(Quote.business_id == get_business_id())  # .where(db.or_(QuoteRequest.status != 'Done', QuoteRequest.id > 2)).order_by(QuoteRequest.title.desc())
     quote_requests = db.session.scalars(stmt).all()
     return QuoteSchema(many=True).dump(quote_requests)
 
@@ -39,9 +39,7 @@ def create_quote(quote_request_id):
         # Check if quote exists
         existing_request = Quote.query.filter_by(
             price=quote_info['price'],
-            business_id = business_id,
-
-        ).first()
+            business_id = business_id,).first()
 
         #ensure no duplicate
         if existing_request:
@@ -62,7 +60,7 @@ def create_quote(quote_request_id):
         db.session.commit()
 
         # Return a success message or the created quote data
-        return {"message": "Quote created successfully", "Quote": QuoteSchema().dump(quote)}, 201
+        return {"message": "Quote created successfully", "Quote": QuoteSchema(exclude=["status", "job", "business_id"]).dump(quote)}, 201
 
     except Exception as e:
         # Handle exceptions appropriately
@@ -139,6 +137,8 @@ def accept_quote(quote_request_id, quote_id):
         job = Job(
             estimated_start=quote.estimated_commencement,
             estimated_completion=None,
+            description=quote.description,
+            images_url=quote.images_url,
             completion_status="To Do",  # Set accordingly
             quoted_price=float(quote.price),  # Convert price to float, adjust as needed
             assigned_hours=None,  # Set accordingly

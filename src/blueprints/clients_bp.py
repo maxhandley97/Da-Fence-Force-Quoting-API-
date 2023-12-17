@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 from auth import authorised_client
+from setup import authorised_router_error_handler
 
 
 clients = Blueprint("clients", __name__, url_prefix="/clients")
@@ -43,19 +44,20 @@ def login_as_client():
 # Get all clients
 @clients.route("/")
 @jwt_required()
+@authorised_router_error_handler
 def all_clients():
     authorised_client()
     stmt = db.select(
         Client
-    )  # .where(db.or_(Card.status != "Done", Card.id > 2)).order_by(Card.title.desc())
+    )
     clients = db.session.scalars(stmt).all()
-    return ClientSchema(many=True, exclude=['password', 'is_admin', 'address', 'phone']).dump(clients)
+    return ClientSchema(many=True, exclude=['password', 'is_admin', 'roles', 'quote_requests']).dump(clients)
 
 @clients.route("/<client_id>", methods=["DELETE"])
 @jwt_required()
 def delete_client(client_id):
     authorised_client(client_id)
-    # Parse incoming POST body through schema
+    
     client = Client.query.get(client_id)
     if client:
         clientname = client.client_name

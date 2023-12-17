@@ -54,6 +54,7 @@ def seed_db():
             employee_name = "admin",
             email = "admin@employee.com",
             password = bcrypt.generate_password_hash("admin123456").decode("utf-8"),
+            phone = "0442123234",
             roles = "manager",
             is_admin = True,
             business_id = businesses[0].id
@@ -64,6 +65,7 @@ def seed_db():
             email = "maxbarbosa@gmail.com",
             password = bcrypt.generate_password_hash("yipyipyip1").decode("utf-8"),
             roles = "manager",
+            phone = "0442512312",
             is_admin = False,
             business_id = businesses[1].id
             ),
@@ -72,6 +74,7 @@ def seed_db():
             email = "jdf@gmail.com",
             password = bcrypt.generate_password_hash("jb123yipyip").decode("utf-8"),
             roles = "employee",
+            phone = "0404043043",
             is_admin = False,
             business_id = businesses[1].id
         )]
@@ -160,11 +163,10 @@ def seed_db():
             quote_request_id = quote_requests[0].id,
             business_id = businesses[2].id
         )
-        # Add more quotes as needed
     ]
     db.session.add_all(quotes)
     db.session.commit()
-
+    #need to seed both at the same time due to one to one relationship
     quotes_and_jobs = [
     {
         'quote': Quote(
@@ -184,17 +186,17 @@ def seed_db():
             quoted_price=5000.00,
             assigned_hours=20,
             employee_id=employees[2].id,
-            quote=None  # Initialize with None, it will be updated in the loop
+            quote=None
         )
     }
 ]
-
+    #create for loop to seed at once
     for pair in quotes_and_jobs:
         db.session.add(pair['quote'])
         db.session.add(pair['job'])
         pair['job'].quote = pair['quote']
 
-    # Now update the quote_id in the Job instances
+    # Now update the quote_id in the Job instance
     for pair in quotes_and_jobs:
         pair['job'].id = pair['job'].quote.id
 

@@ -37,7 +37,6 @@ def manager_business_client_access():
 def manager_business_access():
     from blueprints.employees_bp import Employee
     from blueprints.businesses_bp import Business
-    from blueprints.clients_bp import Client
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
@@ -49,8 +48,6 @@ def manager_business_access():
                 stmt = db.select(Employee).filter_by(id=jwt_identity)
             elif "business" in authorised_claim:
                 stmt = db.select(Business).filter_by(id=jwt_identity)
-            elif "client" in authorised_claim:
-                stmt = db.select(Client).filter_by(id=jwt_identity)
             else:
                 abort(401, description="Not authorised to access")
 
@@ -166,10 +163,13 @@ def authorised_client(client_id=None):
     if not (client.is_admin or (client_id and jwt_client_id == client_id)):
         abort(401, description="You are not authorized to access this resource")
 
-def get_business_id(business_id):
+def get_business_id():
     from blueprints.employees_bp import Employee
     from blueprints.businesses_bp import Business
-    verify_jwt_in_request()
+    try: 
+        verify_jwt_in_request()
+    except InvalidTokenError as e:
+        abort(401, description=str(e))
     jwt_identity = get_jwt_identity()
     # Need to get JWT bearer information to see what database user belongs to
     claims = get_jwt()

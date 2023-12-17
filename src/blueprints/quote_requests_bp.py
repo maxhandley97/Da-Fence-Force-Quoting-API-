@@ -5,7 +5,6 @@ from models.quote_requests import QuoteRequestSchema, QuoteRequest, quote_reques
 from models.jobs import Job
 from models.quotes import Quote
 from blueprints.quotes_bp import quotes
-from decorators import client_or_business_required
 from datetime import date
 from auth import authorised_client, manager_business_client_access
 
@@ -170,11 +169,3 @@ def accept_quote(quote_request_id, quote_id):
     except Exception as e:
         # Handle exceptions appropriately
         return jsonify({"error": str(e)}), 500
-# #create job from quote_request
-# @quote_requests.route('/<int:id>/accept_quote')
-# @jwt_required()
-# def accept_quote(quote_request_id, quote_id):
-#     # Get the quote request
-#     # get the quote
-#     # change quote status to accepted
-#     # create job

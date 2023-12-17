@@ -4,10 +4,13 @@ from main import db, bcrypt
 from models.businesses import Business, BusinessSchema
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
+from blueprints.jobs_bp import jobs
 from datetime import timedelta
 from auth import authorised_business_or_manager, authorised_business
 
 business = Blueprint("business", __name__, url_prefix="/business")
+
+business.register_blueprint(jobs)
 
 @business.errorhandler(KeyError)
 def key_error(e):
@@ -49,6 +52,7 @@ def login_as_business():
 @business.route("/")
 @jwt_required()
 def all_businesses():
+    authorised_business()
     # select * from cards;
     stmt = db.select(
         Business

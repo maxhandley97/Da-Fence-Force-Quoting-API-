@@ -69,9 +69,6 @@ def invalid_token_error(err):
 
 
 
-
-
-
 def authorised_router_error_handler(f):
     def inner(*args, **kwargs):
         try:
@@ -82,14 +79,12 @@ def authorised_router_error_handler(f):
             return key_error(e)
         except ExpiredSignatureError:
             return {"error": "Your JWT token has expired"}, 401
-        except InvalidTokenError:
-            return {"error": "Invalid or missing JWT token in the Authorization header"}, 422
+        except InvalidTokenError as e:
+            return invalid_token_error(e)
         except IntegrityError:
             return {"error": "User already signed up"}, 409
         except BadRequest as e:
             return default_error(e)
-        except Exception as e:
-            abort(400)
     # needed to not take the route name instead of handler
     inner.__name__ = f.__name__        
     return inner
