@@ -10,6 +10,7 @@ class QuoteRequest(db.Model):
     #attributes
     need = db.Column(db.String(), nullable=False)
     description = db.Column(db.String(), nullable=True)
+    status = db.Column(db.String(), nullable=False, default="Pending")
     images_url = db.Column(db.String(), nullable=True)
     fence_type = db.Column(db.String(), nullable=True)
     fence_height_mm = db.Column(db.String(), nullable=True)
@@ -25,11 +26,11 @@ class QuoteRequest(db.Model):
 
 
 class QuoteRequestSchema(ma.Schema):
-    client = fields.Nested('ClientSchema', exclude=['is_admin', 'password', 'quote_requests', 'roles'])
+    client = fields.Nested('ClientSchema', exclude=['is_admin', 'password', 'quote_requests'])
     quotes = fields.Nested('QuoteSchema', many=True, exclude=['quote_request'])
 
     class Meta:
-        fields = ('id', 'need', 'description', 'images_url', 'fence_type',
+        fields = ('id', 'need', 'description', 'images_url', 'fence_type', 'status',
                    'approximate_length_m', 'fence_height_mm', 'date_created', 'client', 'client_id', 'quotes')
 
 

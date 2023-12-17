@@ -61,6 +61,41 @@ def manager_business_access():
 
     return wrapper
 
+# def manager_business_access(fn):
+#     from blueprints.employees_bp import Employee
+#     from blueprints.businesses_bp import Business
+
+#     @wraps(fn)
+#     def decorator(*args, **kwargs):
+#         verify_jwt_in_request()
+#         jwt_identity = get_jwt_identity()
+#         claims = get_jwt()
+#         authorised_claim = claims.get("roles", [])
+
+#         # Check if 'business_id' is provided in the route parameters
+#         business_id = kwargs.get("business_id")
+
+#         if business_id:
+#             # If 'business_id' is provided, check business authorization
+#             if "business" not in authorised_claim:
+#                 abort(401, description="Not authorised to access")
+
+#             stmt = db.select(Business).filter_by(id=business_id)
+#         else:
+#             # If 'business_id' is not provided, check manager authorization
+#             if "manager" not in authorised_claim:
+#                 abort(401, description="Not authorised to access")
+
+#             stmt = db.select(Employee).filter_by(id=jwt_identity)
+
+#         user = db.session.scalar(stmt)
+
+#         if user and (user.is_admin or any(role in authorised_claim for role in ["manager", "business", "client"])):
+#             return fn(*args, **kwargs)
+#         else:
+#             abort(401, description="Not authorised to access")
+
+#     return decorator
 
 def authorised_business_or_manager(user_id=None):
     # Circular import issue
@@ -142,15 +177,14 @@ def authorised_business_manager_client(user_id=None):
 
 def authorised_business(business_id=None):
     from blueprints.businesses_bp import Business
-    jwt_business_id = get_jwt_identity()
-    
-    stmt = db.select(Business).filter_by(id=business_id)
+    business_jwt = get_jwt_identity()
+
+    stmt = db.select(Business).filter_by(id=business_jwt)
     business = db.session.scalar(stmt)
     
-    if not (business.is_admin or (business_id and jwt_business_id == business_id)):
+    if not (business.is_admin or (business_jwt and business_id == business_id)):
         abort(401, description="You are not an authorised business.")
 
-        abort(401, description="You are not an authorised employee.")
 
 def authorised_client(client_id=None):
     from blueprints.clients_bp import Client

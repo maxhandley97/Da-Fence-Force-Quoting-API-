@@ -4,8 +4,10 @@ from main import db
 from models.quotes import QuoteSchema, Quote
 from models.quote_requests import QuoteRequest, QuoteRequestSchema
 from models.jobs import Job
-from auth import authorised_client, check_business_id, manager_business_access, get_business_id, manager_business_client_access
+from auth import (authorised_client, check_business_id, manager_business_access,
+                   get_business_id, manager_business_client_access, authorised_business_or_manager)
 from datetime import date
+from setup import authorised_router_error_handler
 import logging
 
 
@@ -24,13 +26,13 @@ def all_quotes(quote_request_id):
         Quote
     ).where(Quote.business_id == get_business_id())  # .where(db.or_(QuoteRequest.status != 'Done', QuoteRequest.id > 2)).order_by(QuoteRequest.title.desc())
     quote_requests = db.session.scalars(stmt).all()
-    return QuoteSchema(many=True).dump(quote_requests)
+    return jsonify(QuoteSchema(many=True).dump(quote_requests))
 
 @quotes.route("/", methods=["POST"])
 @jwt_required()
 @manager_business_access()
 def create_quote(quote_request_id):
-    try:
+    # try:
         business_id = get_business_id()
         logger.debug(f"business_id: {business_id}")
 
@@ -62,9 +64,9 @@ def create_quote(quote_request_id):
         # Return a success message or the created quote data
         return {"message": "Quote created successfully", "Quote": QuoteSchema(exclude=["status", "job", "business_id"]).dump(quote)}, 201
 
-    except Exception as e:
-        # Handle exceptions appropriately
-        return {"error": str(e)}, 500
+    # except Exception as e:
+    #     # Handle exceptions appropriately
+    #     return {"error": str(e)}, 500
 
 
 @quotes.route("/<int:quote_id>", methods=["PUT", "PATCH"])
@@ -77,7 +79,7 @@ def update_quote(quote_request_id, quote_id):
     stmt = db.select(Quote).filter_by(id=quote_id)
     quote = db.session.scalar(stmt)
     #use function to get business_id
-    business_id = get_business_id(quote.business_id)
+    business_id = get_business_id()
     # check if quote exists and if user is from the business
     if quote and business_id == quote.business_id:
         quote.fence_type = quote_info.get("fence_type", quote.fence_type),
@@ -93,15 +95,16 @@ def update_quote(quote_request_id, quote_id):
 # Delete a quote
 @quotes.route("/<int:quote_id>", methods=["DELETE"])
 @jwt_required()
+@manager_business_access()
 def delete_quote(quote_request_id, quote_id):
     # Select the quote from the database based on the provided quote_id
     stmt = db.select(Quote).filter_by(id=quote_id)
     quote = db.session.scalar(stmt)
     if quote:
-        check_business_id(quote.business_id)
+        authorised_business_or_manager(quote.business_id)
         db.session.delete(quote)
         db.session.commit()
-        return {}, 200
+        return {"Message": "Quote deleted"}, 200
     else:
         return {"error": "Quote not found"}, 404
 
@@ -142,7 +145,7 @@ def accept_quote(quote_request_id, quote_id):
             completion_status="To Do",  # Set accordingly
             quoted_price=float(quote.price),  # Convert price to float, adjust as needed
             assigned_hours=None,  # Set accordingly
-            quote_id=quote.quote_id,
+            quote_id=quote.id,
             final_cost=None,
         )
 

@@ -20,8 +20,11 @@ class Business(db.Model):
 
 class BusinessSchema(ma.Schema):
     employees = fields.Nested("EmployeeSchema", only=["employee_name"], many=True)
+    quotes = fields.Nested("QuoteSchema", only=["need"], many=True)
+
     class Meta:
         fields = ('id', 'business_name', 'email', 'password', 'abn', 'is_admin', 'employee_name', 'roles')
+        exclude = ('jobs',)
 
 business_schema = BusinessSchema()
 businesses_schema = BusinessSchema(many=True)

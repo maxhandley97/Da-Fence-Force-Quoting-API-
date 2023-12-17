@@ -5,34 +5,39 @@ from models.jobs import Job, JobSchema
 from models.jobs import Job
 from datetime import date
 from setup import authorised_router_error_handler
-from auth import get_business_id, authorised_business_or_manager
+from auth import get_business_id, manager_business_access
 from sqlalchemy.exc import IntegrityError
 
 
 jobs = Blueprint("jobs", __name__, url_prefix="/<int:business_id>/jobs")
 
-@jobs.route("/")
-@authorised_router_error_handler
+@jobs.route("/current", methods=["GET"])
 @jwt_required()
-def all_jobs(business_id):
-    jwt_identity = get_jwt_identity()
-    if jwt_identity is None:
-        abort(401, description="JWT identity not found")
-
-    id = get_business_id()
-    if id == business_id:
+@authorised_router_error_handler
+def all_current_jobs(business_id):
+    current_business_id = get_business_id()
+    if current_business_id == business_id:
         stmt = db.select(Job).filter_by(business_id=business_id)
         jobs = db.session.scalars(stmt).all()
-        return JobSchema(many=True).dump(jobs)
+        return jsonify(JobSchema(many=True).dump(jobs))
     else:
         abort(401, description="invalid token")
 
-
+@jobs.route("/", methods=["GET"])
+@jwt_required()
+@manager_business_access()
+@authorised_router_error_handler
+def all_jobs(business_id):
+    stmt = db.select(Job)
+    jobs = db.session.scalars(stmt).all()
+    return jsonify(JobSchema(many=True).dump(jobs))
 
 # Update a job
 @jobs.route('/<int:id>', methods=['PUT', 'PATCH'])
 @jwt_required()
-def update_job(id):
+@manager_business_access()
+@authorised_router_error_handler
+def update_job(id, business_id):
     job_info = JobSchema(exclude=['id', 'date_created']).load(request.json)
     stmt = db.select(Job).filter_by(id=id) 
     job = db.session.scalar(stmt)

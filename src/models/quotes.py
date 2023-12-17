@@ -9,7 +9,9 @@ class Quote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     #other attributes
     fence_type = db.Column(db.String())
+    description = db.Column(db.String(), nullable=True)
     price = db.Column(db.Float)
+    images_url = db.Column(db.String(), nullable=True)
     status = db.Column(db.String())
     date_created = db.Column(db.Date, default=date.today())
     estimated_commencement = db.Column(db.Date, nullable=False)
@@ -29,7 +31,7 @@ class QuoteSchema(ma.Schema):
     job = fields.Nested('JobSchema', only=['id']) # Change 'quote_request_id' to 'id'
 
     class Meta:
-        fields = ('id', 'fence_type', 'status', 'date_created', 'price', 'estimated_commencement', 'estimated_days_job_duration', 'quote_request', 'business_id', 'business', 'job')
+        fields = ('id', 'fence_type', 'status', 'date_created', 'images_url', 'description', 'price', 'estimated_commencement', 'estimated_days_job_duration', 'quote_request', 'business_id', 'business', 'job')
 
 quote_schema = QuoteSchema()
 quotes_schema = QuoteSchema(many=True)

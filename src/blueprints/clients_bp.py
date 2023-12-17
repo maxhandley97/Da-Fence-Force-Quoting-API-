@@ -14,7 +14,7 @@ clients = Blueprint("clients", __name__, url_prefix="/clients")
 @clients.route("/register", methods=["POST"])
 def register_client():
     try:
-        client_info = ClientSchema(exclude=["id", "is_admin", ""]).load(request.json)
+        client_info = ClientSchema(exclude=["id", "is_admin"]).load(request.json)
         client = Client(
             client_name = client_info["client_name"],
             email = client_info["email"],
@@ -51,22 +51,41 @@ def all_clients():
         Client
     )
     clients = db.session.scalars(stmt).all()
-    return ClientSchema(many=True, exclude=['password', 'is_admin', 'roles', 'quote_requests']).dump(clients)
+    return jsonify(ClientSchema(many=True, exclude=['password', 'is_admin', 'quote_requests']).dump(clients))
 
 @clients.route("/<client_id>", methods=["DELETE"])
 @jwt_required()
+@authorised_router_error_handler
 def delete_client(client_id):
-    authorised_client(client_id)
-    
     client = Client.query.get(client_id)
     if client:
+        authorised_client(client_id)
         clientname = client.client_name
         db.session.delete(client)
         db.session.commit()
         return {"Delete": f"Success! Client {clientname} has been deleted."}, 201
     else:
         return {"error": "client not found"}, 404
+    
 
+@clients.route("/<client_id>", methods=["PUT", "PATCH"])
+@jwt_required()
+@authorised_router_error_handler
+def update_client(client_id):
+    client_info = ClientSchema(exclude=["id", "is_admin"]).load(request.json)
+    stmt = db.select(Client).filter_by(id=client_id)
+    client = db.session.scalar(stmt)
+    if client:
+        authorised_client(client_id)
+        client.client_name = client_info.get("client_name", client.client_name)
+        client.email = client_info.get("email", client.email)
+        client.password = client_info.get("password", client.password)
+        client.phone = client_info.get("phone", client.phone)
+        db.session.commit()
+        return {"Update Success": f"Business {client.client_name} has been updated.", 
+                "Updated Details": ClientSchema(exclude=["password"]).dump(client)}, 201
+    else:
+        return {"error": "client not found"}, 404
 
 
 

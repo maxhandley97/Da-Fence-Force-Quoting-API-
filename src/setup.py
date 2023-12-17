@@ -85,6 +85,8 @@ def authorised_router_error_handler(f):
             return {"error": "User already signed up"}, 409
         except BadRequest as e:
             return default_error(e)
+        # except Exception as e:
+        #     return {"error": str(e)}, 500
     # needed to not take the route name instead of handler
     inner.__name__ = f.__name__        
     return inner

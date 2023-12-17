@@ -5,7 +5,7 @@ from models.employees import Employee, EmployeeSchema, employees_schema, employe
 from models.businesses import Business
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
-from setup import authorised_router_error_handler
+from setup import authorised_router_error_handler, invalid_token_error
 from auth import authorised_business_or_manager
 from jwt.exceptions import InvalidTokenError
 import logging
@@ -18,7 +18,7 @@ employees = Blueprint("employees", __name__, url_prefix="/employees")
 #Must be logged in as a business or a manager to register employees
 @employees.route("/register/", methods=["POST"])
 @jwt_required()
-@authorised_router_error_handler
+# @authorised_router_error_handler
 def register_employee():
         employee_info = EmployeeSchema(exclude=["id", "is_admin"]).load(request.json)
         # Get the ID from JWT token
@@ -52,11 +52,13 @@ def register_employee():
 
         #to make roles an optional input, defaulting to employee
         roles = employee_info.get("roles")
+        phone = employee_info.get("phone", None)
         employee = Employee(
             employee_name = employee_info["employee_name"],
             email = employee_info["email"],
             password = bcrypt.generate_password_hash(employee_info["password"]).decode("utf8"),
             business_id = int(business_id),
+            phone = phone,
             roles = roles
             
         )
@@ -111,39 +113,83 @@ def get_employee(employeeId):
 
 @employees.route("/<int:employee_id>", methods=["DELETE"])
 @jwt_required()
+@authorised_router_error_handler
 def delete_employee(employee_id):
-    jwt_identity = get_jwt_identity()
-    # looks at additional claims
-    claims=get_jwt()
-    #get the role from claims to accept both business and manager roles
-    authorised_claim = claims.get("roles", [])
-    if "manager" in authorised_claim:
-        stmt = db.select(Employee).filter_by(id=jwt_identity)
-        manager = db.session.scalar(stmt)
-        business_id = manager.business_id
-    elif "business" in authorised_claim:
-        stmt = db.select(Business).filter_by(id=jwt_identity)
-        business = db.session.scalar(stmt)
-        business_id = business.id
-    else:
-        abort(401, description="Not authorised to access")
-    logger.debug(f"auth: {authorised_claim}")
+    try:
+        jwt_identity = get_jwt_identity()
+        # looks at additional claims
+        claims=get_jwt()
+        #get the role from claims to accept both business and manager roles
+        authorised_claim = claims.get("roles", [])
+        if "manager" in authorised_claim:
+            stmt = db.select(Employee).filter_by(id=jwt_identity)
+            manager = db.session.scalar(stmt)
+            business_id = manager.business_id
+        elif "business" in authorised_claim:
+            stmt = db.select(Business).filter_by(id=jwt_identity)
+            business = db.session.scalar(stmt)
+            business_id = business.id
+        else:
+            abort(401, description="Not authorised to access")
+        logger.debug(f"auth: {authorised_claim}")
 
-    stmt = db.select(Employee).filter_by(id=employee_id) # .where(Card.id == id)
-    employee = db.session.scalar(stmt)
-    #must be from the business 
-    if employee and employee.business_id == business_id:
-        logger.debug(f"Employee business_id: {employee.business_id}")
-        logger.debug(f"Business_id: {business_id}")
-        employee_name = employee.employee_name
-        db.session.delete(employee)
-        db.session.commit()
-        return {"Delete": f"Success! Employee {employee_name} has been deleted."}, 201
-    else:
-        logger.debug(f"Employee business_id: {employee.business_id}")
-        logger.debug(f"Business_id: {business_id}")
-                     
-        return {"error": "employee not found"}, 404
+        stmt = db.select(Employee).filter_by(id=employee_id) # .where(Card.id == id)
+        employee = db.session.scalar(stmt)
+        #must be from the business 
+        if employee and employee.business_id == business_id:
+            logger.debug(f"Employee business_id: {employee.business_id}")
+            logger.debug(f"Business_id: {business_id}")
+            employee_name = employee.employee_name
+            db.session.delete(employee)
+            db.session.commit()
+            return {"Delete": f"Success! Employee {employee_name} has been deleted."}, 201
+        else:
+            logger.debug(f"Employee business_id: {employee.business_id}")
+            logger.debug(f"Business_id: {business_id}")
+                            
+            return {"error": "employee not found"}, 404
+    except (Exception, AttributeError) as e:
+        return invalid_token_error(e)
    
+@employees.route("/<int:employee_id>", methods=["PUT", "PATCH"])
+@jwt_required()
+@authorised_router_error_handler
+def update_employee(employee_id):
+    try:
+        jwt_identity = get_jwt_identity()
+        # looks at additional claims
+        claims=get_jwt()
+        #get the role from claims to accept both business and manager roles
+        authorised_claim = claims.get("roles", [])
+        if "manager" in authorised_claim:
+            stmt = db.select(Employee).filter_by(id=jwt_identity)
+            manager = db.session.scalar(stmt)
+            business_id = manager.business_id
+        elif "business" in authorised_claim:
+            stmt = db.select(Business).filter_by(id=jwt_identity)
+            business = db.session.scalar(stmt)
+            business_id = business.id
+        else:
+            abort(401, description="Not authorised to access")
+        employee_info = EmployeeSchema(exclude=["id", "business_id", "roles", "is_admin"]).load(request.json)
 
+        stmt = db.select(Employee).filter_by(id=employee_id) # .where(Card.id == id)
+        employee = db.session.scalar(stmt)
+        #must be from the same business 
+        if employee and employee.business_id == business_id:
+            authorised_business_or_manager(business_id)
+            employee.employee_name = employee_info.get("employee_name", employee.employee_name)
+            employee.email = employee_info.get("email", employee.email)
+            employee.password = employee_info.get("password", employee.password)
+            employee.phone = employee_info.get("phone", employee.phone)
+            db.session.commit()
+            return {"Update Success": f"Business {employee.employee_name} has been updated.", 
+                "Updated Details": EmployeeSchema(exclude=["password"]).dump(employee)}, 201
+        else:
+                            
+            return {"error": "employee not found"}, 404
+        
+    except (Exception, AttributeError) as e:
+        return {"error": str(e)}, 500
+    #     return invalid_token_error(e)
 

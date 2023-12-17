@@ -6,17 +6,15 @@ from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import create_access_token
 from blueprints.jobs_bp import jobs
 from datetime import timedelta
-from auth import authorised_business_or_manager, authorised_business
+from auth import manager_business_access, authorised_business
+from setup import authorised_router_error_handler
 
 business = Blueprint("business", __name__, url_prefix="/business")
 
 business.register_blueprint(jobs)
 
-@business.errorhandler(KeyError)
-def key_error(e):
-    return jsonify({'error': f'The field {e} is required'}), 400
-
 @business.route("/register", methods=["POST"])
+@authorised_router_error_handler
 def register_business():
     try:
         business_info = BusinessSchema(exclude=["id", "is_admin", "roles"]).load(request.json)
@@ -34,6 +32,7 @@ def register_business():
         return {"error": "Business already signed up"}, 409
     
 @business.route("/login/", methods=["POST"])
+@authorised_router_error_handler
 def login_as_business():
     business_info = BusinessSchema(only=["email", "password"]).load(request.json)
     stmt = db.select(Business).where(Business.email == business_info["email"])
@@ -51,21 +50,24 @@ def login_as_business():
 # Get all businesses
 @business.route("/")
 @jwt_required()
+@manager_business_access()
+@authorised_router_error_handler
+@manager_business_access()
 def all_businesses():
-    authorised_business()
-    # select * from cards;
+    # select * from businesses;
     stmt = db.select(
         Business
-    )  # .where(db.or_(Card.status != "Done", Card.id > 2)).order_by(Card.title.desc())
+    ) 
     businesses = db.session.scalars(stmt).all()
-    return BusinessSchema(many=True, exclude=[]).dump(businesses)
+    return jsonify(BusinessSchema(many=True, exclude=["password"]).dump(businesses))
 
 @business.route("/<int:business_id>", methods=["DELETE"])
 @jwt_required()
+@authorised_router_error_handler
 def delete_business(business_id):
-    authorised_business(business_id)
     business = Business.query.get(business_id)
     if business:
+        authorised_business(business_id)
         businessname = business.business_name
         db.session.delete(business)
         db.session.commit()
@@ -73,6 +75,23 @@ def delete_business(business_id):
     else:
         return {"error": "business not found"}, 404
 
-
+@business.route("/<int:business_id>", methods=["PUT", "PATCH"])
+@jwt_required()
+@authorised_router_error_handler
+def update_business(business_id):
+    business_info = BusinessSchema(exclude=["id", "is_admin", "roles"]).load(request.json)
+    stmt = db.select(Business).filter_by(id=business_id)
+    business = db.session.scalar(stmt)
+    if business:
+        authorised_business(business_id)
+        business.business_name = business_info.get("business_name", business.business_name)
+        business.email = business_info.get("email",business.email)
+        business.password = business_info.get("password",business.password)
+        business.abn = business_info.get("abn",business.abn)
+        db.session.commit()
+        return {"Update Success": f"Business {business.business_name} has been updated.", 
+                "Updated Details": BusinessSchema(exclude=["password"]).dump(business)}, 201
+    else:
+        return {"error": "business not found"}, 404
 
 

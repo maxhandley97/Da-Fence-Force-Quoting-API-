@@ -88,7 +88,6 @@ def seed_db():
             address = "22 Main Street, Mullumbimby, 2043",
             password = bcrypt.generate_password_hash("admin123456").decode("utf-8"),
             phone = "0422044123",
-            roles = "admin",
             is_admin = True,
         ),
 
@@ -97,16 +96,16 @@ def seed_db():
             email = "JA123@gmail.com",
             address = "22 Joe Street, Ocean Shores, 2043",
             password = bcrypt.generate_password_hash("jillyjill1").decode("utf-8"),
-            roles = "client",
             phone = "0422044333",
+            is_admin = False
             ),
         Client(
             client_name = "Johnny Fermosa",
             email = "jfermosa@gmail.com",
             address = "33 Pocket Road, The Pocket, 2044",
             password = bcrypt.generate_password_hash("jf123yipyip").decode("utf-8"),
-            roles = "client",
             phone = '0422044233',
+            is_admin = False
         )]
     db.session.add_all(clients)
     db.session.commit()
@@ -186,6 +185,7 @@ def seed_db():
             quoted_price=5000.00,
             assigned_hours=20,
             employee_id=employees[2].id,
+            business_id=employees[2].business_id,
             quote=None
         )
     }
